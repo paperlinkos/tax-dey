@@ -1,0 +1,7 @@
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { z } from "zod";
+const imported = z.array(z.object({ id:z.string().min(1).max(120), name:z.string().trim().min(1).max(120), target:z.number().int().positive().max(20_000_000), targetDate:z.coerce.date(), frequency:z.enum(["weekly","monthly"]), contributions:z.array(z.object({amount:z.number().int().positive().max(20_000_000),date:z.coerce.date(),note:z.string().max(500).optional(),providerLabel:z.string().max(100).optional()})).max(500) })).max(100);
+export async function POST(request:Request){const session=await auth.api.getSession({headers:await headers()});if(!session)return NextResponse.json({error:"Unauthorized"},{status:401});const value=imported.safeParse(await request.json().catch(()=>null));if(!value.success)return NextResponse.json({error:"Invalid import"},{status:400});await db.$transaction(value.data.map(goal=>db.savingsGoal.upsert({where:{ownerId_importKey:{ownerId:session.user.id,importKey:goal.id}},update:{},create:{ownerId:session.user.id,importKey:goal.id,name:goal.name,targetKobo:goal.target*100,targetDate:goal.targetDate,frequency:goal.frequency,provisional:true,contributions:{create:goal.contributions.map(c=>({amountKobo:c.amount*100,occurredAt:c.date,note:c.note,providerLabel:c.providerLabel,source:"manual"}))}}})));return NextResponse.json({imported:value.data.length})}

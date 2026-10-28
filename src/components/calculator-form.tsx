@@ -1,0 +1,23 @@
+"use client";
+
+import { useState } from "react";
+import { calculatePersonalIncomeTax } from "@/lib/tax/calculator";
+import type { TaxCalculation } from "@/lib/tax/types";
+import { useLanguage } from "./language-provider";
+import { Naira } from "./money";
+import { saveAssessment } from "@/lib/filing/store";
+
+const fields = ["annualEmploymentIncome", "qualifyingAnnualRent", "otherEligibleDeductions", "taxAlreadyPaid"] as const;
+type Field = typeof fields[number];
+
+export function CalculatorForm() {
+  const { t, language } = useLanguage();
+  const [values, setValues] = useState<Record<Field, string>>({ annualEmploymentIncome: "", qualifyingAnnualRent: "", otherEligibleDeductions: "", taxAlreadyPaid: "" });
+  const [result, setResult] = useState<TaxCalculation | null>(null);
+  const [error, setError] = useState("");
+  const labels: Record<Field, string> = { annualEmploymentIncome: t.income, qualifyingAnnualRent: t.rent, otherEligibleDeductions: t.otherDeductions, taxAlreadyPaid: t.paid };
+  function submit(event: React.FormEvent) { event.preventDefault(); try { const calculation = calculatePersonalIncomeTax({ taxYear: 2026, annualEmploymentIncome: Number(values.annualEmploymentIncome || 0), qualifyingAnnualRent: Number(values.qualifyingAnnualRent || 0), otherEligibleDeductions: Number(values.otherEligibleDeductions || 0), taxAlreadyPaid: Number(values.taxAlreadyPaid || 0) }); setResult(calculation); saveAssessment({ version: 1, category: "salary", createdAt: new Date().toISOString(), calculationStatus: "estimate-available", grossIncome: calculation.grossIncome, deductions: calculation.verifiedDeductions, chargeableIncome: calculation.chargeableIncome, tax: calculation.annualTax, credits: calculation.taxAlreadyPaid, balance: calculation.balance, flags: [], language }); setError(""); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to calculate."); } }
+  return <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"><form onSubmit={submit} className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm"><div className="space-y-5">{fields.map((field) => <label key={field} className="block text-sm font-semibold text-stone-800">{labels[field]}<input min="0" inputMode="decimal" type="number" value={values[field]} onChange={(event) => setValues((current) => ({ ...current, [field]: event.target.value }))} className="mt-2 w-full rounded-lg border border-stone-300 px-3 py-3 font-normal focus:border-emerald-700 focus:outline-none" placeholder="₦0" /></label>)}</div><p className="mt-4 text-xs leading-5 text-stone-500">{t.explanation}</p>{error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}<button className="mt-6 w-full rounded-lg bg-emerald-800 px-5 py-3 font-semibold text-white hover:bg-emerald-900">{t.calculateEstimate}</button></form>
+  <section aria-live="polite" className="rounded-2xl border border-stone-200 bg-stone-50 p-6">{result ? <Results result={result} /> : <div className="grid h-full min-h-64 place-items-center text-center text-stone-500">{t.estimateNotice}</div>}</section></div>;
+  function Results({ result }: { result: TaxCalculation }) { const items = [[t.gross, result.grossIncome], [t.deductions, result.verifiedDeductions], [t.chargeable, result.chargeableIncome], [t.estimatedTax, result.annualTax], [t.monthly, result.monthlyTax], [t.alreadyPaid, result.taxAlreadyPaid]] as const; return <><div className="space-y-3">{items.map(([label, value]) => <div key={label} className="flex justify-between gap-3 border-b border-stone-200 pb-3 text-sm"><span className="text-stone-600">{label}</span><strong><Naira value={value}/></strong></div>)}<div className="flex justify-between gap-3 pt-2 text-base font-bold text-emerald-900"><span>{result.balance >= 0 ? t.remaining : t.overpayment}</span><span><Naira value={Math.abs(result.balance)}/></span></div></div><h2 className="mt-7 text-base font-bold">{t.bandBreakdown}</h2><div className="mt-3 space-y-2">{result.bands.map((band) => <div key={band.label} className="grid grid-cols-[1fr_auto] gap-x-3 rounded-lg bg-white p-3 text-sm"><span>{band.label} · {(band.rate * 100).toFixed(0)}%</span><strong><Naira value={band.tax}/></strong><span className="col-span-2 mt-1 text-xs text-stone-500"><Naira value={band.taxableAmount}/> charged in this band</span></div>)}</div><p className="mt-5 text-xs leading-5 text-stone-500">{t.estimateNotice}</p>{result.unverifiedDeductions > 0 && <p className="mt-2 text-xs leading-5 text-amber-800">Other claimed deductions: <Naira value={result.unverifiedDeductions}/>. They are not included in this estimate pending legal eligibility review.</p>}</>; }
+}

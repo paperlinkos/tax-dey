@@ -1,0 +1,7 @@
+import { describe, expect, it } from "vitest";
+import { filingChecklist, readiness } from "./checklist";
+import { personalFilingDeadline } from "./deadlines";
+import { reportText } from "./report";
+import type { StoredAssessment } from "./types";
+const salary: StoredAssessment = { version: 1, category: "salary", createdAt: "2026-01-01", calculationStatus: "estimate-available", grossIncome: 1_000_000, deductions: 0, chargeableIncome: 1_000_000, tax: 30_000, credits: 0, balance: 30_000, flags: [], language: "en" };
+describe("filing readiness", () => { it("selects salary checklist", () => expect(filingChecklist(salary).some((item) => item.id === "paye")).toBe(true)); it("selects business records for freelancers", () => expect(filingChecklist({ ...salary, category: "freelancer" }).some((item) => item.id === "income-records")).toBe(true)); it("detects missing checklist items", () => expect(readiness(salary, [])).toBe("missing")); it("preserves professional review", () => expect(readiness({ ...salary, calculationStatus: "professional-review-required" }, ["tax-id", "authority", "income", "paye"])).toBe("review")); it("returns filing-year deadline", () => expect(personalFilingDeadline(2027).date).toBe("2027-03-31")); it("needs confirmation for jurisdictions", () => expect(personalFilingDeadline(2027, "Lagos").status).toBe("needs-confirmation")); it("contains report figures and disclaimer", () => { const text = reportText(salary); expect(text).toContain("₦"); expect(text).toContain("not an official tax assessment"); }); });

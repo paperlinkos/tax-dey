@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id String @id
+  name String
+  email String @unique
+  emailVerified Boolean @default(false)
+  image String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+  accounts Account[]
+  personalProfile TaxpayerProfile?
+  memberships WorkspaceMember[]
+  savingsGoals SavingsGoal[]
+  @@map("user")
+}
+model SavingsGoal {
+ id String @id @default(cuid())
+ ownerId String
+ owner User @relation(fields:[ownerId], references:[id], onDelete:Cascade)
+ name String
+ targetKobo Int
+ targetDate DateTime
+ frequency String
+ preferredKobo Int?
+ linkedAssessmentId String?
+ provisional Boolean @default(false)
+ importKey String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ contributions SavingsContribution[]
+ revisions SavingsRevision[]
+ @@unique([ownerId, importKey])
+ @@index([ownerId])
+ @@map("savings_goal")
+}
+model SavingsContribution {
+ id String @id @default(cuid())
+ goalId String
+ goal SavingsGoal @relation(fields:[goalId], references:[id], onDelete:Cascade)
+ amountKobo Int
+ occurredAt DateTime
+ note String?
+ providerLabel String?
+ source String @default("manual")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([goalId])
+ @@map("savings_contribution")
+}
+model SavingsRevision {
+ id String @id @default(cuid())
+ goalId String
+ goal SavingsGoal @relation(fields:[goalId], references:[id], onDelete:Cascade)
+ previousKobo Int
+ nextKobo Int
+ reason String
+ createdAt DateTime @default(now())
+ @@index([goalId])
+ @@map("savings_revision")
+}
+model TaxpayerProfile { id String @id @default(cuid())
+ ownerId String @unique
+ owner User @relation(fields:[ownerId], references:[id], onDelete:Cascade)
+ legalType String @default("individual")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@map("taxpayer_profile")
+}
+model Workspace {
+ id String @id @default(cuid())
+ name String
+ legalType String
+ ownerId String
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ members WorkspaceMember[]
+ @@map("workspace")
+}
+model WorkspaceMember {
+ id String @id @default(cuid())
+ workspaceId String
+ userId String
+ role String @default("owner")
+ workspace Workspace @relation(fields:[workspaceId], references:[id], onDelete:Cascade)
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ @@unique([workspaceId,userId])
+ @@index([userId])
+ @@map("workspace_member")
+}
+model Session {
+ id String @id
+ expiresAt DateTime
+ token String @unique
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ ipAddress String?
+ userAgent String?
+ userId String
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ @@index([userId])
+ @@map("session")
+}
+model Account {
+ id String @id
+ accountId String
+ providerId String
+ userId String
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ accessToken String?
+ refreshToken String?
+ idToken String?
+ accessTokenExpiresAt DateTime?
+ refreshTokenExpiresAt DateTime?
+ scope String?
+ password String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([userId])
+ @@map("account")
+}
+model Verification {
+ id String @id
+ identifier String
+ value String
+ expiresAt DateTime
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@map("verification")
+}

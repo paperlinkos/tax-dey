@@ -13,7 +13,11 @@ export type VaultProductType = "savings-deposit" | "money-market-fund";
 export const compliance = {
   operatingModel: "technology-service-provider" as const,
 
-  /** Must stay false unless Tax Dey obtains a CBN licence that allows holding funds (e.g. MMO). */
+  /**
+   * Must stay false unless Tax Dey obtains a CBN licence that allows holding funds (e.g. MMO).
+   * This includes payment gateways: never collect vault savings through Paystack/Flutterwave
+   * (or their virtual accounts). Gateways are for Tax Dey's own fees only. See docs/compliance-review.md.
+   */
   holdsCustomerFunds: false,
 
   /**

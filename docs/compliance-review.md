@@ -35,6 +35,14 @@ Tax Dey is a technology and tax-estimation service. It calculates the tax inside
 
 The `/trust` page is generated from these files, so it always shows what is actually configured.
 
+## Payment gateways: fees only, never savings
+
+**Don't use Paystack, Flutterwave or any payment gateway to collect users' tax savings.** Money paid in that way lands in **Tax Dey's** gateway balance, which means Tax Dey would be holding customer funds. That breaks the compliance model and is exactly what needs a CBN licence (MMO, about ₦5bn capital).
+
+- Gateways are fine for **money that's Tax Dey's own**: the "Filing Ready" pack, subscriptions, partner invoices.
+- Vault money moves only into an account **in the user's own name** at a licensed partner (PiggyVest Business, Cowrywise Embed, Anchor), from the user's own bank, on the user's confirmation.
+- The same applies to a gateway's "dedicated virtual accounts": those accounts settle into the merchant's balance, so they count as Tax Dey holding funds.
+
 ## Connecting a real partner
 
 1. Implement `SavingsPartnerAdapter` (`src/lib/vault/partner.ts`): `openVault`, `deposit`, `withdraw`. Every call carries an idempotency key and a record of the customer's confirmation.

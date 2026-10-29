@@ -1,7 +1,36 @@
 @import "tailwindcss";
 
-@theme { --color-emerald-800: #065f46; --color-emerald-900: #064e3b; }
-* { box-sizing: border-box; }
-body { margin: 0; background: #fafaf9; color: #1c1917; font-family: Arial, Helvetica, sans-serif; }
-a { text-decoration: none; }
-button, select, input { font: inherit; }
+@theme {
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+
+  /* Tax Dey brand */
+  --color-ink: #13201a;
+  --color-paper: #f7f4ec;
+  --color-line: #e4ded0;
+  --color-muted: #5b6862;
+  --color-forest: #0b3b2c;
+  --color-leaf: #12684a;
+  --color-mint: #dcefe4;
+  --color-gold: #e2a72e;
+  --color-gold-soft: #fbefd2;
+  --color-clay: #b4532a;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Layered so Tailwind utilities (e.g. text-white on a link) always win over these defaults. */
+@layer base {
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  a { text-decoration: none; color: inherit; }
+  button, select, input { font: inherit; }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@layer components {
+  .field { display: block; width: 100%; margin-top: 0.375rem; border: 1px solid var(--color-line); border-radius: 0.75rem; background: white; padding: 0.7rem 0.85rem; color: var(--color-ink); }
+  .field:focus { outline: 2px solid var(--color-leaf); outline-offset: 1px; border-color: transparent; }
+  .tabular { font-variant-numeric: tabular-nums; }
+}

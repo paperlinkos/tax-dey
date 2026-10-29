@@ -20,6 +20,7 @@ model User {
   personalProfile TaxpayerProfile?
   memberships WorkspaceMember[]
   savingsGoals SavingsGoal[]
+  taxVaults TaxVault[]
   @@map("user")
 }
 model SavingsGoal {
@@ -135,4 +136,51 @@ model Verification {
  createdAt DateTime @default(now())
  updatedAt DateTime @updatedAt
  @@map("verification")
+}
+
+// Tax vault: one per user per tax year. Money itself is held by the savings partner;
+// these tables are Tax Dey's record of estimates and the partner's confirmations.
+model TaxVault {
+ id String @id @default(cuid())
+ ownerId String
+ owner User @relation(fields:[ownerId], references:[id], onDelete:Cascade)
+ taxYear Int
+ partnerId String
+ profile Json?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ income VaultIncome[]
+ moves VaultMove[]
+ @@unique([ownerId, taxYear])
+ @@map("tax_vault")
+}
+model VaultIncome {
+ id String @id @default(cuid())
+ vaultId String
+ vault TaxVault @relation(fields:[vaultId], references:[id], onDelete:Cascade)
+ receivedOn String
+ amount Decimal @db.Decimal(18,2)
+ source String
+ setAside Decimal @db.Decimal(18,2)
+ breakdown Json
+ status String @default("pending")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([vaultId])
+ @@map("vault_income")
+}
+// Append-only: rows are never updated or deleted by the app.
+model VaultMove {
+ id String @id @default(cuid())
+ vaultId String
+ vault TaxVault @relation(fields:[vaultId], references:[id], onDelete:Cascade)
+ kind String
+ amount Decimal @db.Decimal(18,2)
+ incomeId String?
+ partnerRef String
+ note String?
+ createdAt DateTime @default(now())
+ @@unique([vaultId, incomeId])
+ @@index([vaultId])
+ @@map("vault_move")
 }

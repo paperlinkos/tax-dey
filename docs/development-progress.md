@@ -1,4 +1,18 @@
-# Tax De — Development Progress
+# Tax Dey — Development Progress
+
+## Rebuild — tax vault (2026-10-29)
+
+Product direction changed from "tax calculator with a savings tracker" to "set your tax aside as you earn". The free calculator remains the entry point.
+
+- **Set-aside engine** (`src/lib/setaside/`): for each payment, set aside `liability(income so far + payment) − liability(income so far)`, so set-asides always add up to the full-year tax. Covers salary earners (PAYE-aware side income), freelancers (profit-margin), traders (real profit or 1% presumptive with nano exemption and catch-up) and companies (CIT, 4% development levy, VAT held back). Optional safety cushion.
+- **New tax rules** (`src/lib/tax/company.ts`, `presumptive.ts`, `rules.ts`): every rule carries its legal source and review status. Conservative values are used where sources conflict.
+- **Compliance config** (`src/config/compliance.ts`, `partners.ts`): Tax Dey never holds funds; partner-held vaults only; manual confirmation; no returns marketing; savings products only until SEC review. See `docs/compliance-review.md`.
+- **Vault** (`/vault`): profile setup per segment, "I got paid" with live set-aside preview, move/skip, pay tax from vault, history, deadlines. Signed-in users persist to Postgres (`tax_vault`, `vault_income`, append-only `vault_move`, migration `20261029134442_add_tax_vault`) through one `POST /api/vault` action endpoint. Signed-out users get a browser-only demo using the same action code; `/vault?sample=1` loads a sample year for pitches.
+- **Partner layer** (`src/lib/vault/partner.ts`): `SavingsPartnerAdapter` contract with a sandbox implementation. PiggyVest Business, Cowrywise Embed and Anchor are listed as prospects.
+- **Pages**: new home page, `/trust` (generated from config), `/partners` (partner pitch), `/calculate/company`; `/save` now redirects to `/vault`; dashboard shows the vault summary. Brand renamed to "Tax Dey".
+- **Verification**: 60 unit tests, typecheck, lint and production build pass. API tested end to end against local Postgres with a disposable `@example.test` account (set profile, add income, move, double-move refused, delete-after-move refused, overdraw refused, wrong-year refused, pay tax, reload).
+- **Not done**: Pidgin copy for the new vault screens; the legacy savings goal API, `src/lib/savings/` and `authenticated-save.tsx` are no longer linked but still in the tree (removal pending owner approval); real partner integration; income detection through bank linking.
+
 
 ## Task 005B.2 — persistent savings API foundation
 

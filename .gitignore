@@ -5,3 +5,9 @@ coverage
 .env*
 !.env.example
 .vercel
+
+# AI-assistant skills installed locally (third-party tooling, not app code)
+.agents/
+agent/
+.claude/skills/
+skills-lock.json
